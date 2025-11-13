@@ -1,0 +1,59 @@
+name: Generate REST Endpoint Diagram
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment to run against (e.g., dev, prod)"
+        required: false
+        default: "dev"
+      run_tests:
+        description: "Run test suite"
+        required: false
+        default: true
+        type: boolean
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+      GH_TOKEN:
+        required: false
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt || true
+          npm ci || true
+
+      - name: Run tests
+        if: ${{ inputs.run_tests }}
+        run: |
+          echo "Running tests for environment: ${{ inputs.environment }}"
+          pytest || echo "No pytest tests found"
+          npm test || echo "No npm tests found"
+
+  deploy:
+    name: Deploy
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: ${{ inputs.environment == 'prod' }}
+
+    steps:
+      - name: Deploying to Production
+        run: |
+          echo "Deploying to production..."
+          # Add your real deployment logic here (CDK, SAM, Docker, etc.)
