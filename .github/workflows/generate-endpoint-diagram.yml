@@ -1,11 +1,13 @@
 name: Fetch Image from Picsum
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      image_id:
-        description: 'ID of the image to fetch (0–1084)'
+      repo_name:
         required: true
+        type: string
+      image_id:
+        required: false
         default: '237'
 
 jobs:
