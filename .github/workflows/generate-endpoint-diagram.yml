@@ -45,7 +45,7 @@ jobs:
           EOF
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: fetched-image
           path: image_*.jpg
