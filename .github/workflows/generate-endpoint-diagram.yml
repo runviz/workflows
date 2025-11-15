@@ -9,6 +9,7 @@ on:
       image_id:
         required: false
         default: '237'
+        type: string
 
 jobs:
   fetch-image:
