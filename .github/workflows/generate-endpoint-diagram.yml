@@ -1,59 +1,51 @@
-name: Generate REST Endpoint Diagram
+name: Fetch Image from Picsum
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
-      environment:
-        description: "Environment to run against (e.g., dev, prod)"
-        required: false
-        default: "dev"
-      run_tests:
-        description: "Run test suite"
-        required: false
-        default: true
-        type: boolean
-    secrets:
-      AWS_ACCESS_KEY_ID:
-        required: false
-      AWS_SECRET_ACCESS_KEY:
-        required: false
-      GH_TOKEN:
-        required: false
+      image_id:
+        description: 'ID of the image to fetch (0–1084)'
+        required: true
+        default: '237'
 
 jobs:
-  build-and-test:
-    name: Build and Test
+  fetch-image:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt || true
-          npm ci || true
+          python -m pip install --upgrade pip
+          pip install requests
 
-      - name: Run tests
-        if: ${{ inputs.run_tests }}
+      - name: Fetch image from Picsum
         run: |
-          echo "Running tests for environment: ${{ inputs.environment }}"
-          pytest || echo "No pytest tests found"
-          npm test || echo "No npm tests found"
+          python - << 'EOF'
+          import os
+          import requests
 
-  deploy:
-    name: Deploy
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: ${{ inputs.environment == 'prod' }}
+          image_id = os.environ.get("IMAGE_ID", "${{ github.event.inputs.image_id }}")
+          url = f"https://picsum.photos/id/{image_id}/400/300"
 
-    steps:
-      - name: Deploying to Production
-        run: |
-          echo "Deploying to production..."
-          # Add your real deployment logic here (CDK, SAM, Docker, etc.)
+          response = requests.get(url)
+          response.raise_for_status()
+
+          filename = f"image_{image_id}.jpg"
+          with open(filename, "wb") as f:
+              f.write(response.content)
+
+          print(f"Downloaded image saved as {filename}")
+          EOF
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: fetched-image
+          path: image_*.jpg
